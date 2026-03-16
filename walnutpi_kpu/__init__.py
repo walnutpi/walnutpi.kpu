@@ -2,7 +2,7 @@ from typing import Literal, Dict, Any
 import importlib
 
 # 支持多个版本
-NNCASEVersionType = Literal["2.10"]
+NNCASEVersionType = Literal["2.10","2.11"]
 
 
 def get_nncase(nncase_version: NNCASEVersionType) -> Any:
@@ -11,6 +11,7 @@ def get_nncase(nncase_version: NNCASEVersionType) -> Any:
     """
     module_name_map: Dict[NNCASEVersionType, str] = {
         "2.10": "nncase_2_10",
+        "2.11": "nncase_2_11",
     }
 
     module_name = module_name_map.get(nncase_version)
