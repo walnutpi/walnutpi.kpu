@@ -101,7 +101,7 @@ class _YOLO_BASE:
     is_running = False
     model_size: int
     nms_threshold = 0.45  # nms阈值
-    results = []
+    results:Any
     thread = None
 
     class _speed:
@@ -111,7 +111,7 @@ class _YOLO_BASE:
     speed = _speed()
 
     def __init__(
-        self, kmodel_path: str, size: int, nncase_version: NNCASEVersionType = "2.10"
+        self, kmodel_path: str, size: int, nncase_version: NNCASEVersionType = "2.11"
     ):
         """
         初始化
@@ -186,10 +186,6 @@ class _YOLO_BASE:
         )  # 用灰色填充
         # 构建 AI2D pipeline（输入、输出 shape）
         self.ai2d.build([1, 3, img_h, img_w], [1, 3, model_h, model_w])
-
-    def post_process(self, reliability_threshold, nms_threshold):
-        """后处理，子类需要重写这个函数"""
-        return []
 
     def run(self, img, reliability_threshold=0.5, nms_threshold=0.5):
         """
@@ -368,3 +364,30 @@ class YOLO11_DET(_YOLO_BASE):
             return res
 
         return []
+class YOLO11_CLS(_YOLO_BASE):
+    results = YOLO_RESULT_CLS()  # 识别到的分类结果
+
+    def get_result(self) -> YOLO_RESULT_CLS:
+        return super().get_result()
+    def run(
+        self, img, reliability_threshold=0.5, nms_threshold=0.5
+    ) -> YOLO_RESULT_CLS:
+        return super().run(img, reliability_threshold, nms_threshold)
+
+    def post_process(self, reliability_threshold, nms_threshold):
+        model_output = self.kpu.get_output_tensor(0).to_numpy()
+        tensor = model_output[0].transpose()
+
+        top_5_indices = np.argsort(tensor)[-5:][::-1]
+        ret = YOLO_RESULT_CLS()
+        ret.all = tensor
+        indices = 0
+        for cls_index in top_5_indices:
+            ret.top5[indices] = _YOLO_RESULT_CLS_INDEX(cls_index, tensor[cls_index])
+            indices += 1
+        if indices < 5:
+            for i in range(5 - indices):
+                ret.top5[indices + i] = _YOLO_RESULT_CLS_INDEX(
+                    top_5_indices[-1], tensor[top_5_indices[-1]]
+                )
+        return ret
