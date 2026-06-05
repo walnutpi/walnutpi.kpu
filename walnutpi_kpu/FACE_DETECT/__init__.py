@@ -45,10 +45,11 @@ class FACE_DETECT(KPU_BASE):
     # AI2D 配置：人脸检测专用填充色
     ai2d_pad_color = [104, 117, 123]
     
-    def __init__(self, size: int = 320, 
-                 nncase_version: NNCASEVersionType = "2.11",
+    def __init__(self, 
                  kmodel_path: str = None,
-                 anchors_path: str = None):
+                 anchors_path: str = None,
+                 size: int = 320, 
+                 nncase_version: NNCASEVersionType = "2.11"):
         """
         初始化人脸检测器
         
