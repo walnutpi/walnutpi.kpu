@@ -157,9 +157,8 @@ class YOLO11_DET(KPU_BASE):
                 re = self._result_type()
                 re.index_in_all_boxes = i
 
-                # 直接从xywh格式获取宽高和中心坐标
-                re.x = int(box_xywh[0])  # x_center
-                re.y = int(box_xywh[1])  # y_center
+                re.x = int(box_xywh[0] - box_xywh[2] / 2)  # 左上角 x
+                re.y = int(box_xywh[1] - box_xywh[3] / 2)  # 左上角 y
                 re.w = int(box_xywh[2])  # width
                 re.h = int(box_xywh[3])  # height
                 re.xywh = box_xywh
