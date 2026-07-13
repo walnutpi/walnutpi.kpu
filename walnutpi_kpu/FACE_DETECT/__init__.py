@@ -16,7 +16,7 @@ class Landmark:
         return f"Landmark(x={self.x}, y={self.y})"
 
 
-class FACE_RESULT_DET():
+class FACE_DETECT_RESULT():
     """人脸检测结果，包含 bbox 和 5 个关键点"""
     x: int  # 框左上角的x
     y: int  # 框左上角的y
@@ -33,7 +33,7 @@ class FACE_RESULT_DET():
 class FACE_DETECT(KPU_BASE):
     """人脸检测类，基于 RetinaFace 架构，支持 bbox + 5 点关键点检测"""
     
-    results: List[FACE_RESULT_DET] = []
+    results: List[FACE_DETECT_RESULT] = []
     
     # 支持的模型尺寸
     SUPPORTED_SIZES = (320, 640)
@@ -87,7 +87,7 @@ class FACE_DETECT(KPU_BASE):
         anchors = anchors.reshape(-1, 4)
         return anchors
     
-    def run(self, img, reliability_threshold=None, nms_threshold=None) -> List[FACE_RESULT_DET]:
+    def run(self, img, reliability_threshold=None, nms_threshold=None) -> List[FACE_DETECT_RESULT]:
         """检测图片中的人脸"""
         if reliability_threshold is None:
             reliability_threshold = self.confidence_threshold
@@ -95,10 +95,10 @@ class FACE_DETECT(KPU_BASE):
             nms_threshold = self.nms_threshold
         return super().run(img, reliability_threshold, nms_threshold)
     
-    def get_result(self) -> List[FACE_RESULT_DET]:
+    def get_result(self) -> List[FACE_DETECT_RESULT]:
         return super().get_result()
     
-    def post_process(self, reliability_threshold, nms_threshold) -> List[FACE_RESULT_DET]:
+    def post_process(self, reliability_threshold, nms_threshold) -> List[FACE_DETECT_RESULT]:
         """
         人脸检测后处理，基于 C++ face_detection.cc 实现
         
@@ -230,7 +230,7 @@ class FACE_DETECT(KPU_BASE):
         indices = indices.flatten()
         results = []
         for i in indices:
-            result = FACE_RESULT_DET()
+            result = FACE_DETECT_RESULT()
             box = filtered_boxes[i]
             
             # 从 center-wh 计算左上角坐标和宽高
