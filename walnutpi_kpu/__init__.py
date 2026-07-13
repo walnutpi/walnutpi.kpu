@@ -168,7 +168,8 @@ class KPU_BASE:
             self.speed.ms_post_process = time.time() * 1000 - time_point
             time_point = time.time() * 1000
         except Exception as e:
-            print(e)
+            import traceback
+            traceback.print_exc()
 
         self.has_result = True
         self.is_running = False
