@@ -8,14 +8,21 @@ from typing import List
 from walnutpi_kpu.HAND_KEYPOINT import HAND_KEYPOINT, HAND_KEYPOINT_RESULT, Keypoint
 
 
+# 手势名称列表（索引与 gesture_id 一一对应）
+GESTURE_NAMES = [
+    "fist", "five", "gun", "love", "one",
+    "six", "three", "thumbUp", "yeah",
+]
+
+
 class HAND_KEYPOINT_CLS_RESULT(HAND_KEYPOINT_RESULT):
     """手势识别结果（在关键点基础上增加手势）"""
-    gesture: str = ""  # 手势名称
+    label: int = -1  # 手势编号 (-1 表示未识别)
 
     def __repr__(self):
         return (f"HAND_KEYPOINT_CLS_RESULT(x={self.x}, y={self.y}, "
                 f"w={self.w}, h={self.h}, rel={self.reliability:.3f}, "
-                f"gesture={self.gesture})")
+                f"label={self.label})")
 
 
 class HAND_KEYPOINT_CLS(HAND_KEYPOINT):
@@ -63,7 +70,7 @@ class HAND_KEYPOINT_CLS(HAND_KEYPOINT):
         r.reliability = det.reliability
         r.keypoints = [Keypoint(int(kp_raw[i * 2]), int(kp_raw[i * 2 + 1]))
                        for i in range(len(kp_raw) // 2)]
-        r.gesture = self._classify_gesture(r.keypoints)
+        r.label = self._classify_gesture(r.keypoints)
         return r
 
     # ============================================================
@@ -85,15 +92,16 @@ class HAND_KEYPOINT_CLS(HAND_KEYPOINT):
         return float(np.arccos(cos_angle) * 180 / np.pi)
 
     @staticmethod
-    def _classify_gesture(keypoints: List[Keypoint]) -> str:
+    def _classify_gesture(keypoints: List[Keypoint]) -> int:
         """
         根据 21 个手部关键点判断手势
 
         关键点数据格式与原始 HandDetCls.py 一致：
         42 个值: 腕部(x,y) + 5 根手指 × 每指 8 个值(4点)
+        @return: 手势编号，-1 表示未识别
         """
         if len(keypoints) < 21:
-            return ""
+            return -1
 
         # 转为 42 个值的扁平数组（与原始代码兼容）
         kp_arr = np.zeros(42, dtype=np.int16)
@@ -116,36 +124,36 @@ class HAND_KEYPOINT_CLS(HAND_KEYPOINT):
         thr_angle_s = 49.0
 
         if any(a > 65534 for a in angle_list):
-            return ""
+            return -1
 
         thumb, idx, mid, ring, pinky = angle_list
 
         if (thumb > thr_angle_thumb and idx > thr_angle and
             mid > thr_angle and ring > thr_angle and pinky > thr_angle):
-            return "fist"
-        elif (thumb < thr_angle_s and idx < thr_angle_s and
+            return 0  # fist
+        if (thumb < thr_angle_s and idx < thr_angle_s and
               mid < thr_angle_s and ring < thr_angle_s and pinky < thr_angle_s):
-            return "five"
-        elif (thumb < thr_angle_s and idx < thr_angle_s and
+            return 1  # five
+        if (thumb < thr_angle_s and idx < thr_angle_s and
               mid > thr_angle and ring > thr_angle and pinky > thr_angle):
-            return "gun"
-        elif (thumb < thr_angle_s and idx < thr_angle_s and
+            return 2  # gun
+        if (thumb < thr_angle_s and idx < thr_angle_s and
               mid > thr_angle and ring > thr_angle and pinky < thr_angle_s):
-            return "love"
-        elif (thumb > 5 and idx < thr_angle_s and
+            return 3  # love
+        if (thumb > 5 and idx < thr_angle_s and
               mid > thr_angle and ring > thr_angle and pinky > thr_angle):
-            return "one"
-        elif (thumb < thr_angle_s and idx > thr_angle and
+            return 4  # one
+        if (thumb < thr_angle_s and idx > thr_angle and
               mid > thr_angle and ring > thr_angle and pinky < thr_angle_s):
-            return "six"
-        elif (thumb > thr_angle_thumb and idx < thr_angle_s and
+            return 5  # six
+        if (thumb > thr_angle_thumb and idx < thr_angle_s and
               mid < thr_angle_s and ring < thr_angle_s and pinky > thr_angle):
-            return "three"
-        elif (thumb < thr_angle_s and idx > thr_angle and
+            return 6  # three
+        if (thumb < thr_angle_s and idx > thr_angle and
               mid > thr_angle and ring > thr_angle and pinky > thr_angle):
-            return "thumbUp"
-        elif (thumb > thr_angle_thumb and idx < thr_angle_s and
+            return 7  # thumbUp
+        if (thumb > thr_angle_thumb and idx < thr_angle_s and
               mid < thr_angle_s and ring > thr_angle and pinky > thr_angle):
-            return "yeah"
+            return 8  # yeah
 
-        return ""
+        return -1
